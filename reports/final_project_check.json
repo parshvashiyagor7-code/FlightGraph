@@ -1,0 +1,108 @@
+{
+  "project": "FlightGraph",
+  "passed_checks": 20,
+  "failed_checks": 0,
+  "overall_status": "PASS",
+  "results": [
+    {
+      "check": "File exists: reports\\etl_audit.json",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: reports\\data_quality_validation.json",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: reports\\day4_benchmark.json",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: reports\\eda_summary.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: reports\\monthly_delay.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: reports\\airline_delay.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "File exists: dashboard\\app.py",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "ETL audit contains all splits",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "ETL count arithmetic",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "Total input record count",
+      "status": "PASS",
+      "details": "44,858,151 records"
+    },
+    {
+      "check": "Data quality overall status",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "Train/validation/test checks",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "Benchmark overall status",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "Processed Parquet: train",
+      "status": "PASS",
+      "details": "13 files found"
+    },
+    {
+      "check": "Processed Parquet: val",
+      "status": "PASS",
+      "details": "2 files found"
+    },
+    {
+      "check": "Processed Parquet: test",
+      "status": "PASS",
+      "details": "2 files found"
+    },
+    {
+      "check": "CSV readable: eda_summary.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "CSV readable: monthly_delay.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "CSV readable: airline_delay.csv",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "check": "Dashboard Python syntax",
+      "status": "PASS",
+      "details": ""
+    }
+  ]
+}

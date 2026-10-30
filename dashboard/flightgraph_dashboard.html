@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlightGraph | Flight Analytics</title>
+<style>
+:root {
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --ink: #17243a;
+  --muted: #65748b;
+  --blue: #3268d8;
+  --border: #e2e8f0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+header {
+  padding: 30px 5%;
+  background: #12213c;
+  color: white;
+}
+header h1 { margin: 0 0 8px; font-size: 30px; }
+header p { margin: 0; color: #ccd8eb; }
+main { max-width: 1250px; margin: auto; padding: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 12px #1c33540a;
+  min-width: 0;
+}
+.metric-label { color: var(--muted); font-size: 14px; }
+.metric { font-size: 30px; font-weight: 700; margin-top: 10px; }
+h2 { font-size: 19px; margin: 0 0 16px; }
+.sub { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+.controls {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin-bottom: 14px;
+}
+select {
+  padding: 9px 12px; border: 1px solid var(--border);
+  background: white; border-radius: 8px; color: var(--ink);
+}
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+th { color: var(--muted); font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+footer { color: var(--muted); padding: 20px 0; font-size: 12px; }
+@media (max-width: 600px) {
+  main { padding: 14px; }
+  header { padding: 24px 18px; }
+  header h1 { font-size: 25px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>✈ FlightGraph</h1>
+  <p>Large-Scale Flight Delay Analytics · Powered by PySpark</p>
+</header>
+
+<main>
+  <div class="grid">
+    <div class="card">
+      <div class="metric-label">Training Flight Records</div>
+      <div class="metric" id="flights">—</div>
+    </div>
+    <div class="card">
+      <div class="metric-label">Arrivals Delayed 15+ Minutes</div>
+      <div class="metric" id="delayed">—</div>
+    </div>
+    <div class="card">
+      <div class="metric-label">Delay Rate</div>
+      <div class="metric" id="rate">—</div>
+    </div>
+    <div class="card">
+      <div class="metric-label">Valid Delay Labels</div>
+      <div class="metric" id="valid">—</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <section class="card">
+      <h2>Arrival Delay Distribution</h2>
+      <div id="distribution"></div>
+      <p class="sub">
+        Below threshold also includes early arrivals and delays shorter
+        than 15 minutes.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Monthly Delay Trend</h2>
+      <div id="monthly"></div>
+      <p class="sub">Share of records with ArrDel15 = 1, by year and month.</p>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px">
+    <h2>Airline Delay Comparison</h2>
+    <div class="controls">
+      <label>Minimum flight records:
+        <select id="minimum">
+          <option value="100000">100,000</option>
+          <option value="250000">250,000</option>
+          <option value="500000">500,000</option>
+          <option value="1000000">1,000,000</option>
+        </select>
+      </label>
+      <label>Airlines to show:
+        <select id="topn">
+          <option>5</option><option selected>10</option>
+          <option>15</option><option>20</option>
+        </select>
+      </label>
+    </div>
+    <div id="airlines"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Airline</th><th>Flight records</th><th>15+ min delay</th></tr>
+        </thead>
+        <tbody id="airline-table"></tbody>
+      </table>
+    </div>
+    <p class="sub">
+      Comparison is based on the training dataset. A higher percentage
+      does not by itself explain why delays occurred.
+    </p>
+  </section>
+
+  <footer>
+    FlightGraph · Descriptive analysis, not causal inference.
+  </footer>
+</main>
+
+<script>
+const DATA = {"summary": {"flight_records": "31149502", "valid_labels": "31149502", "delayed_15min_or_more": "5560469", "delayed_15min_or_more_pct": "17.85"}, "monthly": [{"Year": "2018", "Month": "1", "flight_records": "551724", "valid_labels": "551724", "delayed_15min_or_more": "97760", "delayed_15min_or_more_pct": "17.72"}, {"Year": "2018", "Month": "2", "flight_records": "510359", "valid_labels": "510359", "delayed_15min_or_more": "97302", "delayed_15min_or_more_pct": "19.07"}, {"Year": "2018", "Month": "3", "flight_records": "593750", "valid_labels": "593750", "delayed_15min_or_more": "98752", "delayed_15min_or_more_pct": "16.63"}, {"Year": "2018", "Month": "4", "flight_records": "588603", "valid_labels": "588603", "delayed_15min_or_more": "103806", "delayed_15min_or_more_pct": "17.64"}, {"Year": "2018", "Month": "5", "flight_records": "607354", "valid_labels": "607354", "delayed_15min_or_more": "118395", "delayed_15min_or_more_pct": "19.49"}, {"Year": "2018", "Month": "6", "flight_records": "613596", "valid_labels": "613596", "delayed_15min_or_more": "134105", "delayed_15min_or_more_pct": "21.86"}, {"Year": "2018", "Month": "7", "flight_records": "632182", "valid_labels": "632182", "delayed_15min_or_more": "142652", "delayed_15min_or_more_pct": "22.57"}, {"Year": "2018", "Month": "8", "flight_records": "622732", "valid_labels": "622732", "delayed_15min_or_more": "142303", "delayed_15min_or_more_pct": "22.85"}, {"Year": "2018", "Month": "9", "flight_records": "576266", "valid_labels": "576266", "delayed_15min_or_more": "94964", "delayed_15min_or_more_pct": "16.48"}, {"Year": "2018", "Month": "10", "flight_records": "610361", "valid_labels": "610361", "delayed_15min_or_more": "101659", "delayed_15min_or_more_pct": "16.66"}, {"Year": "2018", "Month": "11", "flight_records": "578800", "valid_labels": "578800", "delayed_15min_or_more": "111785", "delayed_15min_or_more_pct": "19.31"}, {"Year": "2018", "Month": "12", "flight_records": "585737", "valid_labels": "585737", "delayed_15min_or_more": "108682", "delayed_15min_or_more_pct": "18.55"}, {"Year": "2019", "Month": "1", "flight_records": "565963", "valid_labels": "565963", "delayed_15min_or_more": "105222", "delayed_15min_or_more_pct": "18.59"}, {"Year": "2019", "Month": "2", "flight_records": "516314", "valid_labels": "516314", "delayed_15min_or_more": "119477", "delayed_15min_or_more_pct": "23.14"}, {"Year": "2019", "Month": "3", "flight_records": "618505", "valid_labels": "618505", "delayed_15min_or_more": "106277", "delayed_15min_or_more_pct": "17.18"}, {"Year": "2019", "Month": "4", "flight_records": "596020", "valid_labels": "596020", "delayed_15min_or_more": "108518", "delayed_15min_or_more_pct": "18.21"}, {"Year": "2019", "Month": "5", "flight_records": "621339", "valid_labels": "621339", "delayed_15min_or_more": "126283", "delayed_15min_or_more_pct": "20.32"}, {"Year": "2019", "Month": "6", "flight_records": "620887", "valid_labels": "620887", "delayed_15min_or_more": "153358", "delayed_15min_or_more_pct": "24.7"}, {"Year": "2019", "Month": "7", "flight_records": "643781", "valid_labels": "643781", "delayed_15min_or_more": "135630", "delayed_15min_or_more_pct": "21.07"}, {"Year": "2019", "Month": "8", "flight_records": "645351", "valid_labels": "645351", "delayed_15min_or_more": "133278", "delayed_15min_or_more_pct": "20.65"}, {"Year": "2019", "Month": "9", "flight_records": "594716", "valid_labels": "594716", "delayed_15min_or_more": "83568", "delayed_15min_or_more_pct": "14.05"}, {"Year": "2019", "Month": "10", "flight_records": "629637", "valid_labels": "629637", "delayed_15min_or_more": "105046", "delayed_15min_or_more_pct": "16.68"}, {"Year": "2019", "Month": "11", "flight_records": "597107", "valid_labels": "597107", "delayed_15min_or_more": "85651", "delayed_15min_or_more_pct": "14.34"}, {"Year": "2019", "Month": "12", "flight_records": "618612", "valid_labels": "618612", "delayed_15min_or_more": "126945", "delayed_15min_or_more_pct": "20.52"}, {"Year": "2020", "Month": "1", "flight_records": "599268", "valid_labels": "599268", "delayed_15min_or_more": "82285", "delayed_15min_or_more_pct": "13.73"}, {"Year": "2020", "Month": "2", "flight_records": "568076", "valid_labels": "568076", "delayed_15min_or_more": "84616", "delayed_15min_or_more_pct": "14.9"}, {"Year": "2020", "Month": "3", "flight_records": "537244", "valid_labels": "537244", "delayed_15min_or_more": "53720", "delayed_15min_or_more_pct": "10.0"}, {"Year": "2020", "Month": "4", "flight_records": "183006", "valid_labels": "183006", "delayed_15min_or_more": "9038", "delayed_15min_or_more_pct": "4.94"}, {"Year": "2020", "Month": "5", "flight_records": "168647", "valid_labels": "168647", "delayed_15min_or_more": "7794", "delayed_15min_or_more_pct": "4.62"}, {"Year": "2020", "Month": "6", "flight_records": "222569", "valid_labels": "222569", "delayed_15min_or_more": "14949", "delayed_15min_or_more_pct": "6.72"}, {"Year": "2020", "Month": "7", "flight_records": "349256", "valid_labels": "349256", "delayed_15min_or_more": "29913", "delayed_15min_or_more_pct": "8.56"}, {"Year": "2020", "Month": "8", "flight_records": "371969", "valid_labels": "371969", "delayed_15min_or_more": "28968", "delayed_15min_or_more_pct": "7.79"}, {"Year": "2020", "Month": "9", "flight_records": "321092", "valid_labels": "321092", "delayed_15min_or_more": "20195", "delayed_15min_or_more_pct": "6.29"}, {"Year": "2020", "Month": "10", "flight_records": "349709", "valid_labels": "349709", "delayed_15min_or_more": "29507", "delayed_15min_or_more_pct": "8.44"}, {"Year": "2020", "Month": "11", "flight_records": "361799", "valid_labels": "361799", "delayed_15min_or_more": "27404", "delayed_15min_or_more_pct": "7.57"}, {"Year": "2020", "Month": "12", "flight_records": "366940", "valid_labels": "366940", "delayed_15min_or_more": "43532", "delayed_15min_or_more_pct": "11.86"}, {"Year": "2021", "Month": "1", "flight_records": "357204", "valid_labels": "357204", "delayed_15min_or_more": "34961", "delayed_15min_or_more_pct": "9.79"}, {"Year": "2021", "Month": "2", "flight_records": "313388", "valid_labels": "313388", "delayed_15min_or_more": "45593", "delayed_15min_or_more_pct": "14.55"}, {"Year": "2021", "Month": "3", "flight_records": "437965", "valid_labels": "437965", "delayed_15min_or_more": "44643", "delayed_15min_or_more_pct": "10.19"}, {"Year": "2021", "Month": "4", "flight_records": "447425", "valid_labels": "447425", "delayed_15min_or_more": "47682", "delayed_15min_or_more_pct": "10.66"}, {"Year": "2021", "Month": "5", "flight_records": "491997", "valid_labels": "491997", "delayed_15min_or_more": "65606", "delayed_15min_or_more_pct": "13.33"}, {"Year": "2021", "Month": "6", "flight_records": "535467", "valid_labels": "535467", "delayed_15min_or_more": "127565", "delayed_15min_or_more_pct": "23.82"}, {"Year": "2021", "Month": "7", "flight_records": "571881", "valid_labels": "571881", "delayed_15min_or_more": "143123", "delayed_15min_or_more_pct": "25.03"}, {"Year": "2021", "Month": "8", "flight_records": "559947", "valid_labels": "559947", "delayed_15min_or_more": "127387", "delayed_15min_or_more_pct": "22.75"}, {"Year": "2021", "Month": "9", "flight_records": "530377", "valid_labels": "530377", "delayed_15min_or_more": "73363", "delayed_15min_or_more_pct": "13.83"}, {"Year": "2021", "Month": "10", "flight_records": "551984", "valid_labels": "551984", "delayed_15min_or_more": "99586", "delayed_15min_or_more_pct": "18.04"}, {"Year": "2021", "Month": "11", "flight_records": "543401", "valid_labels": "543401", "delayed_15min_or_more": "81673", "delayed_15min_or_more_pct": "15.03"}, {"Year": "2021", "Month": "12", "flight_records": "537183", "valid_labels": "537183", "delayed_15min_or_more": "119150", "delayed_15min_or_more_pct": "22.18"}, {"Year": "2022", "Month": "1", "flight_records": "503529", "valid_labels": "503529", "delayed_15min_or_more": "97052", "delayed_15min_or_more_pct": "19.27"}, {"Year": "2022", "Month": "2", "flight_records": "473146", "valid_labels": "473146", "delayed_15min_or_more": "92614", "delayed_15min_or_more_pct": "19.57"}, {"Year": "2022", "Month": "3", "flight_records": "554710", "valid_labels": "554710", "delayed_15min_or_more": "119816", "delayed_15min_or_more_pct": "21.6"}, {"Year": "2022", "Month": "4", "flight_records": "542117", "valid_labels": "542117", "delayed_15min_or_more": "120962", "delayed_15min_or_more_pct": "22.31"}, {"Year": "2022", "Month": "5", "flight_records": "565955", "valid_labels": "565955", "delayed_15min_or_more": "119498", "delayed_15min_or_more_pct": "21.11"}, {"Year": "2022", "Month": "6", "flight_records": "557753", "valid_labels": "557753", "delayed_15min_or_more": "134598", "delayed_15min_or_more_pct": "24.13"}, {"Year": "2022", "Month": "7", "flight_records": "582549", "valid_labels": "582549", "delayed_15min_or_more": "138121", "delayed_15min_or_more_pct": "23.71"}, {"Year": "2022", "Month": "8", "flight_records": "573619", "valid_labels": "573619", "delayed_15min_or_more": "128520", "delayed_15min_or_more_pct": "22.41"}, {"Year": "2022", "Month": "9", "flight_records": "547728", "valid_labels": "547728", "delayed_15min_or_more": "90875", "delayed_15min_or_more_pct": "16.59"}, {"Year": "2022", "Month": "10", "flight_records": "566492", "valid_labels": "566492", "delayed_15min_or_more": "90057", "delayed_15min_or_more_pct": "15.9"}, {"Year": "2022", "Month": "11", "flight_records": "539199", "valid_labels": "539199", "delayed_15min_or_more": "102278", "delayed_15min_or_more_pct": "18.97"}, {"Year": "2022", "Month": "12", "flight_records": "525215", "valid_labels": "525215", "delayed_15min_or_more": "142407", "delayed_15min_or_more_pct": "27.11"}], "airlines": [{"Reporting_Airline": "9E", "flight_records": "1183756", "valid_labels": "1183756", "delayed_15min_or_more": "163105", "delayed_15min_or_more_pct": "13.78"}, {"Reporting_Airline": "AA", "flight_records": "3922146", "valid_labels": "3922146", "delayed_15min_or_more": "751099", "delayed_15min_or_more_pct": "19.15"}, {"Reporting_Airline": "AS", "flight_records": "1043257", "valid_labels": "1043257", "delayed_15min_or_more": "180650", "delayed_15min_or_more_pct": "17.32"}, {"Reporting_Airline": "B6", "flight_records": "1186795", "valid_labels": "1186795", "delayed_15min_or_more": "310281", "delayed_15min_or_more_pct": "26.14"}, {"Reporting_Airline": "DL", "flight_records": "4103620", "valid_labels": "4103620", "delayed_15min_or_more": "549147", "delayed_15min_or_more_pct": "13.38"}, {"Reporting_Airline": "EV", "flight_records": "372744", "valid_labels": "372744", "delayed_15min_or_more": "79824", "delayed_15min_or_more_pct": "21.42"}, {"Reporting_Airline": "F9", "flight_records": "622778", "valid_labels": "622778", "delayed_15min_or_more": "156015", "delayed_15min_or_more_pct": "25.05"}, {"Reporting_Airline": "G4", "flight_records": "507597", "valid_labels": "507597", "delayed_15min_or_more": "127289", "delayed_15min_or_more_pct": "25.08"}, {"Reporting_Airline": "HA", "flight_records": "331453", "valid_labels": "331453", "delayed_15min_or_more": "43144", "delayed_15min_or_more_pct": "13.02"}, {"Reporting_Airline": "MQ", "flight_records": "1290150", "valid_labels": "1290150", "delayed_15min_or_more": "230212", "delayed_15min_or_more_pct": "17.84"}, {"Reporting_Airline": "NK", "flight_records": "917231", "valid_labels": "917231", "delayed_15min_or_more": "178083", "delayed_15min_or_more_pct": "19.42"}, {"Reporting_Airline": "OH", "flight_records": "1152603", "valid_labels": "1152603", "delayed_15min_or_more": "208991", "delayed_15min_or_more_pct": "18.13"}, {"Reporting_Airline": "OO", "flight_records": "3603474", "valid_labels": "3603474", "delayed_15min_or_more": "590366", "delayed_15min_or_more_pct": "16.38"}, {"Reporting_Airline": "QX", "flight_records": "196481", "valid_labels": "196481", "delayed_15min_or_more": "28682", "delayed_15min_or_more_pct": "14.6"}, {"Reporting_Airline": "UA", "flight_records": "2571428", "valid_labels": "2571428", "delayed_15min_or_more": "473609", "delayed_15min_or_more_pct": "18.42"}, {"Reporting_Airline": "VX", "flight_records": "17153", "valid_labels": "17153", "delayed_15min_or_more": "3440", "delayed_15min_or_more_pct": "20.05"}, {"Reporting_Airline": "WN", "flight_records": "5842210", "valid_labels": "5842210", "delayed_15min_or_more": "1086648", "delayed_15min_or_more_pct": "18.6"}, {"Reporting_Airline": "YV", "flight_records": "822534", "valid_labels": "822534", "delayed_15min_or_more": "158941", "delayed_15min_or_more_pct": "19.32"}, {"Reporting_Airline": "YX", "flight_records": "1462092", "valid_labels": "1462092", "delayed_15min_or_more": "240943", "delayed_15min_or_more_pct": "16.48"}]};
+
+const fmt = n => Number(n).toLocaleString("en-US");
+const num = v => Number(v);
+const pct = v => `${num(v).toFixed(2)}%`;
+
+const summary = DATA.summary;
+
+document.getElementById("flights").textContent =
+  fmt(summary.flight_records);
+document.getElementById("delayed").textContent =
+  fmt(summary.delayed_15min_or_more);
+document.getElementById("rate").textContent =
+  pct(summary.arrival_delay_15min_or_more_pct);
+document.getElementById("valid").textContent =
+  fmt(summary.valid_labels);
+
+function distributionChart() {
+  const delayed = num(summary.arrival_delay_15min_or_more_pct);
+  const rows = [
+    ["15+ minutes delayed", delayed],
+    ["Below 15-minute threshold", 100 - delayed]
+  ];
+  let svg = `<svg viewBox="0 0 600 180" role="img"
+    aria-label="Arrival delay distribution">`;
+
+  rows.forEach((row, i) => {
+    const y = 40 + i * 65;
+    const width = row[1] * 3.4;
+    svg += `<text x="4" y="${y}" font-size="14" fill="#17243a">${row[0]}</text>
+      <rect x="4" y="${y + 10}" width="500" height="19" rx="5" fill="#e8eef8"/>
+      <rect x="4" y="${y + 10}" width="${width}" height="19" rx="5" fill="#3268d8"/>
+      <text x="515" y="${y + 25}" font-size="13" fill="#17243a">${row[1].toFixed(2)}%</text>`;
+  });
+
+  svg += "</svg>";
+  document.getElementById("distribution").innerHTML = svg;
+}
+
+function monthlyChart() {
+  const rows = DATA.monthly
+    .map(r => ({
+      label: `${r.Year}-${String(r.Month).padStart(2, "0")}`,
+      value: num(r.delayed_15min_or_more_pct),
+      year: num(r.Year),
+      month: num(r.Month)
+    }))
+    .filter(r => Number.isFinite(r.value))
+    .sort((a, b) => a.year - b.year || a.month - b.month);
+
+  if (!rows.length) {
+    document.getElementById("monthly").textContent = "No monthly data.";
+    return;
+  }
+
+  const W = 700, H = 290;
+  const L = 48, R = 15, T = 22, B = 45;
+  const max = Math.max(5, Math.ceil(Math.max(...rows.map(r => r.value)) / 5) * 5);
+  const x = i => L + i * (W - L - R) / Math.max(1, rows.length - 1);
+  const y = v => H - B - (v / max) * (H - T - B);
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="Monthly delay trend">`;
+
+  for (let j = 0; j <= 4; j++) {
+    const value = max * j / 4;
+    s += `<line x1="${L}" y1="${y(value)}" x2="${W-R}" y2="${y(value)}"
+      stroke="#e2e8f0"/>
+      <text x="${L-8}" y="${y(value)+4}" font-size="12" text-anchor="end"
+      fill="#65748b">${value.toFixed(0)}%</text>`;
+  }
+
+  const path = rows.map((r, i) =>
+    `${i === 0 ? "M" : "L"} ${x(i)} ${y(r.value)}`
+  ).join(" ");
+
+  s += `<path d="${path}" fill="none" stroke="#3268d8" stroke-width="2.8"/>`;
+
+  rows.forEach((r, i) => {
+    s += `<circle cx="${x(i)}" cy="${y(r.value)}" r="3" fill="#3268d8">
+      <title>${r.label}: ${r.value.toFixed(2)}%</title></circle>`;
+  });
+
+  const step = Math.max(1, Math.ceil(rows.length / 7));
+  rows.forEach((r, i) => {
+    if (i % step === 0 || i === rows.length - 1) {
+      s += `<text x="${x(i)}" y="${H-17}" text-anchor="middle"
+        font-size="11" fill="#65748b">${r.label}</text>`;
+    }
+  });
+
+  s += "</svg>";
+  document.getElementById("monthly").innerHTML = s;
+}
+
+function airlineChart() {
+  const minimum = num(document.getElementById("minimum").value);
+  const topn = num(document.getElementById("topn").value);
+
+  const rows = DATA.airlines
+    .map(r => ({
+      code: r.Reporting_Airline,
+      flights: num(r.flight_records),
+      value: num(r.delayed_15min_or_more_pct)
+    }))
+    .filter(r =>
+      r.flights >= minimum && Number.isFinite(r.value)
+    )
+    .sort((a, b) => b.value - a.value)
+    .slice(0, topn);
+
+  const chart = document.getElementById("airlines");
+  const table = document.getElementById("airline-table");
+
+  if (!rows.length) {
+    chart.textContent = "No airlines match these filters.";
+    table.innerHTML = "";
+    return;
+  }
+
+  const max = Math.max(5, Math.ceil(Math.max(...rows.map(r => r.value)) / 5) * 5);
+  const W = 700, rowH = 34, H = rows.length * rowH + 20;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="Airline delay percentage comparison">`;
+
+  rows.forEach((r, i) => {
+    const y = 10 + i * rowH;
+    const width = r.value / max * 460;
+    svg += `<text x="4" y="${y+19}" font-size="13" fill="#17243a">${r.code}</text>
+      <rect x="70" y="${y+5}" width="460" height="18" rx="4" fill="#e8eef8"/>
+      <rect x="70" y="${y+5}" width="${width}" height="18" rx="4" fill="#3268d8"/>
+      <text x="${Math.min(540, 78+width)}" y="${y+19}" font-size="12"
+      fill="#17243a">${r.value.toFixed(2)}%</text>`;
+  });
+
+  svg += "</svg>";
+  chart.innerHTML = svg;
+
+  table.innerHTML = rows.map(r =>
+    `<tr><td>${r.code}</td><td>${fmt(r.flights)}</td>
+    <td>${r.value.toFixed(2)}%</td></tr>`
+  ).join("");
+}
+
+distributionChart();
+monthlyChart();
+airlineChart();
+
+document.getElementById("minimum").addEventListener("change", airlineChart);
+document.getElementById("topn").addEventListener("change", airlineChart);
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "pipeline": "FlightGraph ETL",
+  "run_timestamp": "2026-10-18T10:10:56",
+  "splits": [
+    {
+      "split": "train",
+      "input_rows": 31149502,
+      "accepted_rows": 31149502,
+      "rejected_rows": 0,
+      "processed_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\processed\\train",
+      "rejected_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\rejected\\train"
+    },
+    {
+      "split": "val",
+      "input_rows": 6743403,
+      "accepted_rows": 6743403,
+      "rejected_rows": 0,
+      "processed_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\processed\\val",
+      "rejected_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\rejected\\val"
+    },
+    {
+      "split": "test",
+      "input_rows": 6965246,
+      "accepted_rows": 6965246,
+      "rejected_rows": 0,
+      "processed_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\processed\\test",
+      "rejected_path": "C:\\Users\\parsh\\Downloads\\FlightGraph\\data\\rejected\\test"
+    }
+  ]
+}

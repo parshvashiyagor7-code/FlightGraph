@@ -1,0 +1,25 @@
+# Virtual environments
+.venv/
+.venv-dashboard/
+venv/
+
+# Large datasets
+data/
+outputs/
+*.parquet
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Spark temporary files
+spark-warehouse/
+metastore_db/
+derby.log
+
+# System files
+.DS_Store
+Thumbs.db

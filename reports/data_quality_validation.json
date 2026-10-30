@@ -1,0 +1,57 @@
+{
+  "validation_time": "2026-10-19T09:27:20",
+  "checks": [
+    {
+      "split": "train",
+      "status": "PASS",
+      "actual_rows": 31149502,
+      "audit_accepted_rows": 31149502,
+      "checks": {
+        "null_dates": 0,
+        "missing_origin": 0,
+        "missing_destination": 0,
+        "missing_airline": 0,
+        "invalid_arr_delay_label": 0,
+        "invalid_year": 0,
+        "invalid_month": 0,
+        "date_year_mismatch": 0,
+        "date_month_mismatch": 0
+      }
+    },
+    {
+      "split": "val",
+      "status": "PASS",
+      "actual_rows": 6743403,
+      "audit_accepted_rows": 6743403,
+      "checks": {
+        "null_dates": 0,
+        "missing_origin": 0,
+        "missing_destination": 0,
+        "missing_airline": 0,
+        "invalid_arr_delay_label": 0,
+        "invalid_year": 0,
+        "invalid_month": 0,
+        "date_year_mismatch": 0,
+        "date_month_mismatch": 0
+      }
+    },
+    {
+      "split": "test",
+      "status": "PASS",
+      "actual_rows": 6965246,
+      "audit_accepted_rows": 6965246,
+      "checks": {
+        "null_dates": 0,
+        "missing_origin": 0,
+        "missing_destination": 0,
+        "missing_airline": 0,
+        "invalid_arr_delay_label": 0,
+        "invalid_year": 0,
+        "invalid_month": 0,
+        "date_year_mismatch": 0,
+        "date_month_mismatch": 0
+      }
+    }
+  ],
+  "overall_status": "PASS"
+}

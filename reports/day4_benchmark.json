@@ -1,0 +1,50 @@
+{
+  "project": "FlightGraph",
+  "benchmark_type": "Processed Parquet full-count scan",
+  "spark_master": "local[2]",
+  "splits": [
+    {
+      "split": "train",
+      "status": "PASS",
+      "rows": 31149502,
+      "audit_accepted_rows": 31149502,
+      "columns": 65,
+      "parquet_file_count": 13,
+      "parquet_size_mb": 1572.13,
+      "read_setup_seconds": 3.308,
+      "full_count_scan_seconds": 2.98,
+      "scan_records_per_second": 10451849.57,
+      "audit_count_match": true,
+      "previous_validation_pass": true
+    },
+    {
+      "split": "val",
+      "status": "PASS",
+      "rows": 6743403,
+      "audit_accepted_rows": 6743403,
+      "columns": 65,
+      "parquet_file_count": 2,
+      "parquet_size_mb": 235.73,
+      "read_setup_seconds": 0.139,
+      "full_count_scan_seconds": 0.186,
+      "scan_records_per_second": 36267002.34,
+      "audit_count_match": true,
+      "previous_validation_pass": true
+    },
+    {
+      "split": "test",
+      "status": "PASS",
+      "rows": 6965246,
+      "audit_accepted_rows": 6965246,
+      "columns": 65,
+      "parquet_file_count": 2,
+      "parquet_size_mb": 207.95,
+      "read_setup_seconds": 0.156,
+      "full_count_scan_seconds": 0.183,
+      "scan_records_per_second": 37995926.15,
+      "audit_count_match": true,
+      "previous_validation_pass": true
+    }
+  ],
+  "overall_status": "PASS"
+}
